@@ -1,8 +1,11 @@
-# Ethereum Smart Contract Template
+# Aave V3 wrapper for Idle Best Yield
 
 https://docs.idle.finance/developers/best-yield/
+
 https://github.com/aave/aave-v3-core
+
 https://docs.aave.com/developers/getting-started/v3-overview
+
 
 ## Set up
 
@@ -17,7 +20,7 @@ For Foundry specific features, refer to:
 To set up type:
 
 ```bash
-`make setup`
+make setup
 ```
 
 ## Commands
