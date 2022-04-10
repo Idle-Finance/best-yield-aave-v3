@@ -35,14 +35,20 @@ interface IIdleTokenV4 is IERC20 {
      * @param user address
      * @return priceWFee : IdleToken price with fees
      */
-    function tokenPriceWithFee(address user) external view returns (uint256 priceWFee);
+    function tokenPriceWithFee(address user)
+        external
+        view
+        returns (uint256 priceWFee);
 
     /**
      * @notice Get average price paid for IdleTokens of a user
      * @param user : address of user
      * @return avgPrice : average price paid for IdleTokens
      */
-    function userAvgPrices(address user) external view returns (uint256 avgPrice);
+    function userAvgPrices(address user)
+        external
+        view
+        returns (uint256 avgPrice);
 
     /**
      * @return : underlying token address
@@ -55,7 +61,10 @@ interface IIdleTokenV4 is IERC20 {
      * @return addresses : array of token addresses
      * @return aprs : array of aprs (ordered in respect to the `addresses` array)
      */
-    function getAPRs() external view returns (address[] memory addresses, uint256[] memory aprs);
+    function getAPRs()
+        external
+        view
+        returns (address[] memory addresses, uint256[] memory aprs);
 
     // external
     // We should save the amount one has deposited to calc interests
@@ -87,7 +96,9 @@ interface IIdleTokenV4 is IERC20 {
      * @param _amount : amount of IdleTokens to be burned
      * @return redeemedTokens : amount of underlying tokens redeemed
      */
-    function redeemIdleToken(uint256 _amount) external returns (uint256 redeemedTokens);
+    function redeemIdleToken(uint256 _amount)
+        external
+        returns (uint256 redeemedTokens);
 
     /**
      * Here we calc the pool share one can withdraw given the amount of IdleToken they want to burn
