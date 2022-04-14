@@ -34,7 +34,10 @@ contract PoolMock {
         address to
     ) external returns (uint256) {
         address aToken = underlyingToAToken[asset];
-
+        if (type(uint256).max == amount) {
+            amount = MockAToken(aToken).balanceOf(msg.sender);
+        }
         MockAToken(aToken).burn(asset, msg.sender, to, amount);
+        return amount;
     }
 }

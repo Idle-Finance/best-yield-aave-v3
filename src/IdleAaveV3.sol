@@ -27,6 +27,7 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
 
     // protocol token (aToken) address
     address public token;
+
     // underlying token (token eg DAI) address
     address public underlying;
 
