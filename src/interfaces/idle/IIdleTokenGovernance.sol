@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "./IIdleTokenV4.sol";
 
 interface IIdleTokenGovernance is IIdleTokenV4 {
+    function maxUnlentPerc() external view returns (uint256);
+
     function token() external view returns (address);
 
     function owner() external view returns (address);

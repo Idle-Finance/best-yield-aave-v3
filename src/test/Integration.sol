@@ -41,6 +41,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
     }
     modifier setUpAllocations() {
         IIdleTokenGovernance _idleToken = idleToken;
+
         // set new allocations
         address[] memory availableTokens = _idleToken.getAllAvailableTokens();
         uint256 length = availableTokens.length;
@@ -49,6 +50,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
             address[] memory protocolTokens = new address[](length + 1);
             address[] memory wrappers = new address[](length + 1);
 
+            // create protocol tokens and wrappers parameters
             for (uint256 i = 0; i < length; i++) {
                 protocolTokens[i] = availableTokens[i];
                 wrappers[i] = _idleToken.protocolWrappers(availableTokens[i]);
@@ -56,30 +58,35 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
             protocolTokens[length] = aToken;
             wrappers[length] = address(wrapper);
 
+            // create govTokens parameters
+            address[] memory govTokens = new address[](1);
+            address[] memory govTokensEqualLen = new address[](length + 1);
+            govTokens[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+            govTokensEqualLen[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+            govTokensEqualLen[1] = address(0);
+            govTokensEqualLen[2] = address(0);
+
             // add aave-v3 wrapper
             cheats.prank(owner);
             _idleToken.setAllAvailableTokensAndWrappers(
                 protocolTokens,
                 wrappers,
-                new address[](length + 1),
-                new address[](length + 1)
+                govTokens,
+                govTokensEqualLen
             );
         }
+        // set allocations
         uint256[] memory allocations = new uint256[](length + 1);
         uint256[] memory currentAllocations = _idleToken.getAllocations();
-        // allocations[length] = FULL_ALLOCATION;
-        // @todo set aave-v3 allocation
-        for (uint256 i = 0; i < currentAllocations.length; i++) {
-            allocations[i] = currentAllocations[i];
-        }
+        allocations[length] = FULL_ALLOCATION;
+
         cheats.prank(owner);
         _idleToken.setAllocations(allocations);
 
         _;
     }
 
-    function setUp() public {
-        if (block.chainid != POLYGON_MAINNET_CHIANID) return;
+    function setUp() public runOnForkingNetwork(POLYGON_MAINNET_CHIANID) {
         underlying = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC on Polygon
         aToken = 0x625E7708f30cA75bfd92586e17077590C60eb4cD; // USDC-AToken-Polygon
         provider = IPoolAddressesProvider(
@@ -96,7 +103,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         wrapper = new IdleAaveV3(
             address(underlying),
             address(aToken),
-            address(this),
+            address(_idleToken),
             provider
         );
 
@@ -106,7 +113,6 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         cheats.label(address(underlying), "underlying");
         cheats.label(address(aToken), "aToken");
         cheats.label(address(pool), "pool");
-        console.log("address(this) :>>", address(this));
 
         // owner
         owner = _idleToken.owner();
@@ -138,23 +144,48 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
         setUpAllocations
     {
+        uint256 price = idleToken.tokenPriceWithFee(address(this));
         idleToken.mintIdleToken(1e10, false, address(0));
 
-        assertEq(IERC20(underlying).balanceOf(address(wrapper)), 0);
-        assertEq(IERC20(aToken).balanceOf(address(this)), 1e10);
+        assertEq(idleToken.balanceOf(address(this)), (1e10 * 1e18) / price);
+        assertEq(IERC20(underlying).balanceOf(address(this)), 0);
     }
 
-    // function testRedeem()
-    //     external
-    //     runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
-    //     setUpAllocations
-    // {
-    //     uint256 mintedTokens = idleToken.mintIdleToken(1e10, false, address(0));
-    //     idleToken.redeemIdleToken(mintedTokens);
+    function testRedeem()
+        external
+        runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
+        setUpAllocations
+    {
+        uint256 mintedTokens = idleToken.mintIdleToken(1e10, false, address(0));
+        cheats.roll(block.number + 1); // progress blockNumber
+        idleToken.redeemIdleToken(mintedTokens);
 
-    //     assertEq(IERC20(aToken).balanceOf(address(wrapper)), 0);
-    //     assertEq(IERC20(underlying).balanceOf(address(this)), 1e10);
-    // }
+        assertEq(idleToken.balanceOf(address(this)), 0, "idletoken_bal");
+        assertApproxEq(
+            IERC20(underlying).balanceOf(address(this)),
+            1e10,
+            1 // maxDelta
+        );
+    }
+
+    function testRebalance()
+        external
+        runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
+        setUpAllocations
+    {
+        uint256 priceBefore = idleToken.tokenPriceWithFee(address(this));
+        uint256 assetsInUnderlying = (idleToken.totalSupply() * priceBefore) / 1e18; // prettier-ignore
+        uint256 maxUnlentPerc = idleToken.maxUnlentPerc(); // 100000 == 100% -> 1000 == 1%
+
+        assertBoolEq(idleToken.rebalance(), true); // return true if rebalanced
+
+        assertGe(idleToken.tokenPriceWithFee(address(this)), priceBefore);
+        assertRelApproxEq(
+            IERC20(aToken).balanceOf(address(idleToken)),
+            (assetsInUnderlying * (100000 - maxUnlentPerc)) / 100000,
+            1e12 // 1e18 = 100 %
+        );
+    }
 
     // function testNextSupplyRate()
     //     external
