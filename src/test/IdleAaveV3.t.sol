@@ -2,16 +2,14 @@
 
 pragma solidity 0.8.10;
 
-import "forge-std/console.sol";
+import "../IdleAaveV3.sol";
+import "./mocks/MockERC20.sol";
+import "./mocks/MockAToken.sol";
+import "./mocks/PoolAddressesProviderMock.sol";
+import "./mocks/PoolMock.sol";
 
-import "./IdleAaveV3.sol";
-import "./test/mocks/MockERC20.sol";
-import "./test/mocks/MockAToken.sol";
-import "./test/mocks/PoolAddressesProviderMock.sol";
-import "./test/mocks/PoolMock.sol";
-
-import "./test/utils/DSTestPlus.sol";
-import "./test/utils/CheatCodes.sol";
+import "./utils/DSTestPlus.sol";
+import "./utils/CheatCodes.sol";
 
 contract IdleAaveV3Test is DSTestPlus {
     CheatCodes internal constant cheats =
@@ -96,52 +94,3 @@ contract IdleAaveV3Test is DSTestPlus {
         assertEq(wrapper.getPriceInToken(), 1e18); // fixed price
     }
 }
-
-// contract IdleAaveV3TestOnForking is IdleAaveV3Test {
-//     uint256 internal POLYGON_MAINNET_CHIANID = 137;
-
-//     modifier runOnForkingNetwork(uint256 networkId) {
-//         // solhint-disable-next-line
-//         if (block.chainid == networkId) {
-//             _;
-//         }
-//     }
-
-//     function setUp() public override {
-//         if (block.chainid != POLYGON_MAINNET_CHIANID) {
-//             return super.setUp();
-//         }
-
-//         underlying = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC on Polygon
-//         aToken = 0x625E7708f30cA75bfd92586e17077590C60eb4cD; // USDC-AToken-Polygon
-//         provider = IPoolAddressesProvider(
-//             0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb
-//         );
-//         pool = provider.getPool();
-
-//         wrapper = new IdleAaveV3(
-//             address(underlying),
-//             address(aToken),
-//             address(this),
-//             provider
-//         );
-//         wrapper.transferOwnership(owner);
-
-//         // fund
-//         cheats.prank(0x51E3D44172868Acc60D68ca99591Ce4230bc75E0); // MEXC.com
-//         IERC20(underlying).transfer(address(wrapper), 1e10);
-
-//         cheats.label(address(wrapper), "wrapper");
-//         cheats.label(address(underlying), "underlying");
-//         cheats.label(address(aToken), "aToken");
-//         cheats.label(address(pool), "pool");
-//     }
-
-//     function testNextSupplyRate()
-//         external
-//         runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
-//     {
-//         uint256 rate = 0;
-//         assertEq(wrapper.nextSupplyRate(1000 * 1e18), rate);
-//     }
-// }

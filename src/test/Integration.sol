@@ -2,18 +2,13 @@
 
 pragma solidity 0.8.10;
 
-import "forge-std/console.sol";
-
-import "../interfaces/idle/IIdleTokenGovernance.sol";
 import "../IdleAaveV3.sol";
-import "../IdleAaveV3.t.sol";
-import "./mocks/MockERC20.sol";
-import "./mocks/MockAToken.sol";
-import "./mocks/PoolAddressesProviderMock.sol";
-import "./mocks/PoolMock.sol";
+import "../interfaces/idle/IIdleTokenGovernance.sol";
 
 import "./utils/DSTestPlus.sol";
 import "./utils/CheatCodes.sol";
+
+import "forge-std/console.sol";
 
 contract IdleAaveV3IntegrationTest is DSTestPlus {
     uint256 internal constant POLYGON_MAINNET_CHIANID = 137;

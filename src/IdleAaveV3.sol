@@ -15,8 +15,6 @@ import "./interfaces/aave-v3/DataTypes.sol";
 
 import "./lib/ReserveConfiguration.sol";
 
-import "forge-std/console.sol";
-
 contract IdleAaveV3 is ILendingProtocol, Ownable {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeERC20 for IERC20;
