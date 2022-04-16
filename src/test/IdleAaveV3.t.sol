@@ -44,15 +44,31 @@ contract IdleAaveV3Test is DSTestPlus {
         cheats.label(address(underlying), "underlying");
     }
 
+    function testConstructorParams() external {
+        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        new IdleAaveV3(address(0), address(aToken), address(this), provider);
+
+        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        new IdleAaveV3(underlying, address(0), address(this), provider);
+
+        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        new IdleAaveV3(
+            address(underlying),
+            address(aToken),
+            address(0),
+            provider
+        );
+    }
+
     function testOnlyIdleTokenCanMintOrRedeem() external {
         address caller = address(0xCAFE);
 
         hevm.prank(caller);
-        cheats.expectRevert(bytes("wrapper/only-idle"));
+        cheats.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
         wrapper.mint();
 
         hevm.prank(caller);
-        cheats.expectRevert(bytes("wrapper/only-idle"));
+        cheats.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
         wrapper.redeem(caller);
     }
 
