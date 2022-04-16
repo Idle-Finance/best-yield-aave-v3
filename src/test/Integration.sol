@@ -187,11 +187,14 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         );
     }
 
-    // function testNextSupplyRate()
-    //     external
-    //     runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
-    // {
-    //     uint256 rate = 0;
-    //     assertEq(wrapper.nextSupplyRate(1000 * 1e10), rate);
-    // }
+    function testNextSupplyRate()
+        external
+        runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
+    {
+        uint256 currentRate = wrapper.nextSupplyRate(0);
+        uint256 nextRate = wrapper.nextSupplyRate(1e10);
+
+        assertApproxEq(nextRate, 1e18, 10 * 1e18); // 1~10
+        assertLe(nextRate, currentRate, "the much supply,the lower rate");
+    }
 }

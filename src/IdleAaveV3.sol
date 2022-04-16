@@ -21,18 +21,25 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeERC20 for IERC20;
 
+    error IdleAaveV3_ZeroAddress();
+
+    error IdleAaveV3_OnlyIdleToken();
+
     uint256 private constant SCALE = 1e18;
 
+    /// @notice aave v3 pool address provider
     IPoolAddressesProvider public immutable provider;
 
-    // protocol token (aToken) address
+    /// @notice protocol token (aToken) address
     address public token;
 
-    // underlying token (token eg DAI) address
+    /// @notice underlying token (token eg DAI) address
     address public underlying;
 
+    /// @notice idle interest-bearing token
     address public idleToken;
 
+    /// @notice referral code for aave v3
     uint16 public referralCode;
 
     constructor(
@@ -41,6 +48,13 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
         address _idleToken,
         IPoolAddressesProvider _provider
     ) {
+        if (
+            _underlying == address(0) ||
+            _token == address(0) ||
+            _idleToken == address(0) ||
+            address(_provider) == address(0)
+        ) revert IdleAaveV3_ZeroAddress();
+
         underlying = _underlying;
         token = _token;
         idleToken = _idleToken;
@@ -51,7 +65,7 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
      * Throws if called by any account other than IdleToken contract.
      */
     modifier onlyIdle() {
-        require(msg.sender == idleToken, "wrapper/only-idle");
+        if (msg.sender != idleToken) revert IdleAaveV3_OnlyIdleToken();
         _;
     }
 
@@ -81,25 +95,11 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
         override
         returns (uint256)
     {
-        DataTypes.ReserveData memory data = IPool(provider.getPool())
-            .getReserveData(underlying);
+        DataTypes.ReserveData memory data = IPool(
+            provider.getPool()
+        ).getReserveData(underlying); // prettier-ignore
         DataTypes.ReserveConfigurationMap memory config = data.configuration;
         uint256 reserveFactor = config.getReserveFactor();
-
-        {
-            // @todo bit operation practice
-            uint256 RESERVE_FACTOR_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFF;
-            uint256 answer = (config.data & ~RESERVE_FACTOR_MASK);
-            console.log("RESERVE_FACTOR_MASK :>>", RESERVE_FACTOR_MASK);
-            console.log("~RESERVE_FACTOR_MASK :>>", ~RESERVE_FACTOR_MASK);
-            console.log("answer :>>", answer);
-
-            uint256 mask = uint256(15) << 64;
-            uint256 _reserveFactor = (config.data & mask) >> 64;
-
-            console.log("mask :>>", mask);
-            console.log("_reserveFactor :>>", _reserveFactor);
-        }
 
         (uint256 totalStableDebt, uint256 avgStableRate) = IStableDebtToken(
             data.stableDebtTokenAddress
@@ -109,24 +109,20 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
             data.variableDebtTokenAddress
         ).scaledTotalSupply() * data.variableBorrowIndex) / 10**27; // variable borrow index. Expressed in ray
 
-        uint256 _availableLiquidity = IERC20(underlying).balanceOf(
-            data.aTokenAddress
-        );
-
-        IReserveInterestRateStrategy interestRateModel = IReserveInterestRateStrategy(
+        IReserveInterestRateStrategy rateStrategy = IReserveInterestRateStrategy(
                 data.interestRateStrategyAddress
             );
 
-        (uint256 liquidityRate, , ) = interestRateModel.calculateInterestRates(
+        (uint256 liquidityRate, , ) = rateStrategy.calculateInterestRates(
             DataTypes.CalculateInterestRatesParams({
                 unbacked: data.unbacked,
-                liquidityAdded: _availableLiquidity + _amount, // @todo
-                liquidityTaken: 0, // @todo
+                liquidityAdded: _amount,
+                liquidityTaken: 0,
                 totalStableDebt: totalStableDebt,
                 totalVariableDebt: totalVariableDebt,
                 averageStableBorrowRate: avgStableRate,
                 reserveFactor: reserveFactor,
-                reserve: address(0), // @todo
+                reserve: underlying,
                 aToken: token
             })
         );
@@ -159,13 +155,14 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
      * @return tokens : aTokens minted
      */
     function mint() external override onlyIdle returns (uint256 tokens) {
-        // x underlying => x aTokens
-        tokens = IERC20(underlying).balanceOf(address(this));
-        // msg.sender will receive the aTokens
+        IERC20 _uToken = IERC20(underlying);
         address pool = provider.getPool();
 
-        IERC20(underlying).safeApprove(pool, type(uint256).max);
-        IPool(pool).supply(underlying, tokens, msg.sender, referralCode);
+        // x underlying => x aTokens
+        tokens = _uToken.balanceOf(address(this));
+        _uToken.safeApprove(pool, tokens);
+        // msg.sender will receive the aTokens
+        IPool(pool).supply(address(_uToken), tokens, msg.sender, referralCode);
     }
 
     /**

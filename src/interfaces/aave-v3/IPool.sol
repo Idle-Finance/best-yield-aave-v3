@@ -202,43 +202,4 @@ interface IPool {
         external
         view
         returns (DataTypes.ReserveData memory);
-
-    /**
-     * @notice Returns the PoolAddressesProvider connected to this contract
-     * @return The address of the PoolAddressesProvider
-     **/
-    function ADDRESSES_PROVIDER()
-        external
-        view
-        returns (IPoolAddressesProvider);
-
-    /**
-     * @notice Returns the data of an eMode category
-     * @param id The id of the category
-     * @return The configuration data of the category
-     */
-    function getEModeCategoryData(uint8 id)
-        external
-        view
-        returns (DataTypes.EModeCategory memory);
-
-    /**
-     * @notice Allows a user to use the protocol in eMode
-     * @param categoryId The id of the category
-     */
-    function setUserEMode(uint8 categoryId) external;
-
-    /**
-     * @notice Returns the eMode the user is using
-     * @param user The address of the user
-     * @return The eMode id
-     */
-    function getUserEMode(address user) external view returns (uint256);
-
-    /**
-     * @notice Resets the isolation mode total debt of the given asset to zero
-     * @dev It requires the given asset has zero debt ceiling
-     * @param asset The address of the underlying asset to reset the isolationModeTotalDebt
-     */
-    function resetIsolationModeTotalDebt(address asset) external;
 }
