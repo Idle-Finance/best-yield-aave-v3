@@ -1,12 +1,5 @@
 # Aave V3 wrapper for Idle Best Yield
 
-https://docs.idle.finance/developers/best-yield/
-
-https://github.com/aave/aave-v3-core
-
-https://docs.aave.com/developers/getting-started/v3-overview
-
-
 ## Set up
 
 It requires [Foundry](https://github.com/gakonst/foundry) installed to run. You can find instructions here [Foundry installation](https://github.com/gakonst/foundry#installation).
@@ -35,36 +28,31 @@ make setup
 
 ## Testing
 
-To run test type:
+To run test on local network type:
 
 ```sh
 make test
 ```
 
-### Testing forked chain
+To run test on forked polygon network, copy `.env.example` to `.env` and set the following environment variables.
 
-Work in progress...
+````sh
+export ALCHEMY_API_KEY=YOUR_API_KEY
+export ETH_NODE=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+export FORK_BLOCK_NUMBER=26900000 # polygon
 
-<!-- ### Testing forked chain
+``
 
-You can also fork a chain by providing an RPC url to something like [Alchemy](https://www.alchemy.com/) or [Infura](https://infura.io/).
-
-To enable blockchain forking, you need to copy `.env.example` to `.env` and change `RPC_ON` and `ETH_NODE` to match your environment.
+Type:
 
 ```sh
-export RPC_ON=yes
-export ETH_NODE=https://eth-mainnet.alchemyapi.io/v2/ALCHEMY_API_KEY
-```
+make test-fork
+````
 
-After adding the variables to your `.env` you can run `make test` normally
+## Docs
 
-You need to add the RPC url to your GitHub secrets as `ETH_NODE` to enable fork testing in GitHub Actions. Also make sure to uncomment these lines in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+[Idle Finance docs](https://docs.idle.finance/developers/best-yield/)
 
-```yaml
-# Enable this if using forking tests
-env:
-    ETH_NODE: ${{ secrets.ETH_NODE }}
-    RPC_ON: yes
-``` -->
+[GitHub aave-v3-core](https://github.com/aave/aave-v3-core)
 
-<!-- ## FAQ -->
+[Aave V3 docs](https://docs.aave.com/developers/getting-started/v3-overview)
