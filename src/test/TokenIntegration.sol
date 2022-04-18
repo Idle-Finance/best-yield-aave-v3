@@ -10,6 +10,8 @@ import "./utils/CheatCodes.sol";
 
 import "forge-std/console.sol";
 
+/// @title abstract contract for token integration test
+/// @dev override `_setUp` function
 abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
     address internal constant USDC_WHALE =
         0x51E3D44172868Acc60D68ca99591Ce4230bc75E0; // MEXC.com
@@ -25,19 +27,30 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
 
     uint256 internal constant FULL_ALLOCATION = 100000;
 
+    /// @notice aave v3 provider
     IPoolAddressesProvider internal constant provider =
         IPoolAddressesProvider(0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb);
 
     IIdleTokenGovernance internal idleToken;
     IdleAaveV3 internal wrapper;
 
+    /// @notice for example DAI
+
     address internal underlying;
+
+    /// @notice for example aDAI
     address internal aToken;
+
+    /// @notice fetched via aave v3 provider
     address internal pool;
+
+    /// @notice token whale address
     address internal tokenWhale;
 
+    /// @notice owner of idleAaveV3 wrapper contract
     address internal owner;
 
+    /// @notice underlying amount to deposit
     uint256 internal amount;
 
     modifier runOnForkingNetwork(uint256 networkId) {
@@ -95,6 +108,7 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
     }
 
     function setUp() public runOnForkingNetwork(POLYGON_MAINNET_CHIANID) {
+        // set up tokens and a whale address
         _setUp();
 
         IIdleTokenGovernance _idleToken = idleToken;
@@ -125,6 +139,8 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
         IERC20(underlying).approve(address(_idleToken), amount);
     }
 
+    /// @dev set up tokens and a whale address
+    ///      override this methods on the pararent contract
     function _setUp() internal virtual;
 
     function testSetReferral()
