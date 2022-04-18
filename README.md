@@ -36,18 +36,18 @@ make test
 
 To run test on forked polygon network, copy `.env.example` to `.env` and set the following environment variables.
 
-````sh
+```sh
 export ALCHEMY_API_KEY=YOUR_API_KEY
-export ETH_NODE=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+export POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
 export FORK_BLOCK_NUMBER=26900000 # polygon
 
-``
+```
 
-Type:
+then Type:
 
 ```sh
 make test-fork
-````
+```
 
 ## Docs
 
