@@ -10,23 +10,35 @@ import "./utils/CheatCodes.sol";
 
 import "forge-std/console.sol";
 
-contract IdleAaveV3IntegrationTest is DSTestPlus {
-    uint256 internal constant POLYGON_MAINNET_CHIANID = 137;
-    uint256 internal constant FULL_ALLOCATION = 100000;
+abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
     address internal constant USDC_WHALE =
         0x51E3D44172868Acc60D68ca99591Ce4230bc75E0; // MEXC.com
+    address internal constant DAI_WHALE =
+        0x4A35582a710E1F4b2030A3F826DA20BfB6703C09;
+    address internal constant WETH_WHALE =
+        0x77ceea82E4362dD3B2E0D7F76d0A71A628Cad300;
 
     CheatCodes internal constant cheats =
         CheatCodes(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
+    uint256 internal constant POLYGON_MAINNET_CHIANID = 137;
+
+    uint256 internal constant FULL_ALLOCATION = 100000;
+
+    IPoolAddressesProvider internal constant provider =
+        IPoolAddressesProvider(0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb);
+
     IIdleTokenGovernance internal idleToken;
     IdleAaveV3 internal wrapper;
+
     address internal underlying;
     address internal aToken;
     address internal pool;
-    IPoolAddressesProvider internal provider;
+    address internal tokenWhale;
 
     address internal owner;
+
+    uint256 internal amount;
 
     modifier runOnForkingNetwork(uint256 networkId) {
         // solhint-disable-next-line
@@ -34,6 +46,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
             _;
         }
     }
+
     modifier setUpAllocations() {
         IIdleTokenGovernance _idleToken = idleToken;
 
@@ -82,18 +95,9 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
     }
 
     function setUp() public runOnForkingNetwork(POLYGON_MAINNET_CHIANID) {
-        underlying = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC on Polygon
-        aToken = 0x625E7708f30cA75bfd92586e17077590C60eb4cD; // USDC-AToken-Polygon
-        provider = IPoolAddressesProvider(
-            0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb
-        );
+        _setUp();
 
-        IIdleTokenGovernance _idleToken = IIdleTokenGovernance(
-            0x1ee6470CD75D5686d0b2b90C0305Fa46fb0C89A1
-        ); // idleUSDC
-        idleToken = _idleToken;
-
-        pool = provider.getPool();
+        IIdleTokenGovernance _idleToken = idleToken;
 
         wrapper = new IdleAaveV3(
             address(underlying),
@@ -109,17 +113,19 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         cheats.label(address(aToken), "aToken");
         cheats.label(address(pool), "pool");
 
+        // fund
+        cheats.prank(tokenWhale);
+        IERC20(underlying).transfer(address(this), amount);
+
         // owner
         owner = _idleToken.owner();
         wrapper.transferOwnership(owner);
 
-        // fund
-        cheats.prank(USDC_WHALE);
-        IERC20(underlying).transfer(address(this), 1e10);
-
         // approve
-        IERC20(underlying).approve(address(_idleToken), 1e10);
+        IERC20(underlying).approve(address(_idleToken), amount);
     }
+
+    function _setUp() internal virtual;
 
     function testSetReferral()
         external
@@ -140,9 +146,9 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         setUpAllocations
     {
         uint256 price = idleToken.tokenPriceWithFee(address(this));
-        idleToken.mintIdleToken(1e10, false, address(0));
+        idleToken.mintIdleToken(amount, false, address(0));
 
-        assertEq(idleToken.balanceOf(address(this)), (1e10 * 1e18) / price);
+        assertEq(idleToken.balanceOf(address(this)), (amount * 1e18) / price);
         assertEq(IERC20(underlying).balanceOf(address(this)), 0);
     }
 
@@ -151,14 +157,18 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
         setUpAllocations
     {
-        uint256 mintedTokens = idleToken.mintIdleToken(1e10, false, address(0));
+        uint256 mintedTokens = idleToken.mintIdleToken(
+            amount,
+            false,
+            address(0)
+        );
         cheats.roll(block.number + 1); // progress blockNumber
         idleToken.redeemIdleToken(mintedTokens);
 
         assertEq(idleToken.balanceOf(address(this)), 0, "idletoken_bal");
         assertApproxEq(
             IERC20(underlying).balanceOf(address(this)),
-            1e10,
+            amount,
             1 // maxDelta
         );
     }
@@ -172,7 +182,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         uint256 assetsInUnderlying = (idleToken.totalSupply() * priceBefore) / 1e18; // prettier-ignore
         uint256 maxUnlentPerc = idleToken.maxUnlentPerc(); // 100000 == 100% -> 1000 == 1%
 
-        assertBoolEq(idleToken.rebalance(), true); // return true if rebalanced
+        assertTrue(idleToken.rebalance()); // return true if rebalanced
 
         assertGe(idleToken.tokenPriceWithFee(address(this)), priceBefore);
         assertRelApproxEq(
@@ -187,7 +197,7 @@ contract IdleAaveV3IntegrationTest is DSTestPlus {
         runOnForkingNetwork(POLYGON_MAINNET_CHIANID)
     {
         uint256 currentRate = wrapper.nextSupplyRate(0);
-        uint256 nextRate = wrapper.nextSupplyRate(1e10);
+        uint256 nextRate = wrapper.nextSupplyRate(amount);
 
         assertApproxEq(nextRate, 1e18, 10 * 1e18); // 1~10
         assertLe(nextRate, currentRate, "the much supply,the lower rate");
