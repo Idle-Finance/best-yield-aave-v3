@@ -9,12 +9,8 @@ import "./mocks/PoolAddressesProviderMock.sol";
 import "./mocks/PoolMock.sol";
 
 import "./utils/DSTestPlus.sol";
-import "./utils/CheatCodes.sol";
 
 contract IdleAaveV3Test is DSTestPlus {
-    CheatCodes internal constant cheats =
-        CheatCodes(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
     IdleAaveV3 internal wrapper;
     address internal underlying;
     address internal aToken;
@@ -35,23 +31,26 @@ contract IdleAaveV3Test is DSTestPlus {
             address(this),
             provider
         );
+
+        // transfer ownership
         wrapper.transferOwnership(owner);
 
         // fund
         MockERC20(underlying).mint(address(wrapper), 1e10);
 
-        cheats.label(address(wrapper), "wrapper");
-        cheats.label(address(underlying), "underlying");
+        //  label
+        hevm.label(address(wrapper), "wrapper");
+        hevm.label(address(underlying), "underlying");
     }
 
     function testConstructorParams() external {
-        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        hevm.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
         new IdleAaveV3(address(0), address(aToken), address(this), provider);
 
-        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        hevm.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
         new IdleAaveV3(underlying, address(0), address(this), provider);
 
-        cheats.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
+        hevm.expectRevert(IdleAaveV3.IdleAaveV3_ZeroAddress.selector);
         new IdleAaveV3(
             address(underlying),
             address(aToken),
@@ -64,11 +63,11 @@ contract IdleAaveV3Test is DSTestPlus {
         address caller = address(0xCAFE);
 
         hevm.prank(caller);
-        cheats.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
+        hevm.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
         wrapper.mint();
 
         hevm.prank(caller);
-        cheats.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
+        hevm.expectRevert(IdleAaveV3.IdleAaveV3_OnlyIdleToken.selector);
         wrapper.redeem(caller);
     }
 
@@ -79,7 +78,7 @@ contract IdleAaveV3Test is DSTestPlus {
         wrapper.setReferralCode(10);
         assertEq(wrapper.referralCode(), 10);
 
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        hevm.expectRevert(bytes("Ownable: caller is not the owner"));
         wrapper.setReferralCode(14);
         assertEq(wrapper.referralCode(), 10);
     }

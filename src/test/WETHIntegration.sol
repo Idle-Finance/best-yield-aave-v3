@@ -3,7 +3,6 @@
 pragma solidity 0.8.10;
 
 import "./TokenIntegration.sol";
-import "forge-std/console.sol";
 
 contract IdleAaveV3WETHIntegrationTest is IdleAaveV3TokenIntegrationTest {
     function _setUp() internal override {
@@ -15,7 +14,5 @@ contract IdleAaveV3WETHIntegrationTest is IdleAaveV3TokenIntegrationTest {
         pool = provider.getPool();
 
         amount = 100 * 1e18;
-
-        tokenWhale = WETH_WHALE;
     }
 }

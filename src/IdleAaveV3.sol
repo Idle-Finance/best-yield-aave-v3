@@ -29,13 +29,13 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
     IPoolAddressesProvider public immutable provider;
 
     /// @notice protocol token (aToken) address
-    address public token;
+    address public immutable token;
 
     /// @notice underlying token (token eg DAI) address
-    address public underlying;
+    address public immutable underlying;
 
     /// @notice idle interest-bearing token
-    address public idleToken;
+    address public immutable idleToken;
 
     /// @notice referral code for aave v3
     uint16 public referralCode;
