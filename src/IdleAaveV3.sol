@@ -141,7 +141,8 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
         // data.currentLiquidityRate means current supply rate. Expressed in ray
         DataTypes.ReserveData memory data = IPool(provider.getPool())
             .getReserveData(underlying);
-        return uint256(data.currentLiquidityRate) / 10**7; // 100 / 10**9 = 10**7
+        // data.currentLiquidityRate * 100 / 10**9
+        return uint256(data.currentLiquidityRate) / 10**7;
     }
 
     /**

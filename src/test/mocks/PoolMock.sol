@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../../interfaces/aave-v3/DataTypes.sol";
 import "./MockAToken.sol";
 
 contract PoolMock {
@@ -39,5 +40,18 @@ contract PoolMock {
         }
         MockAToken(aToken).burn(asset, msg.sender, to, amount);
         return amount;
+    }
+
+    /**
+     * @notice Returns the state and configuration of the reserve
+     * @param asset The address of the underlying asset of the reserve
+     * @return The state and configuration data of the reserve
+     **/
+    function getReserveData(address asset)
+        external
+        view
+        returns (DataTypes.ReserveData memory)
+    {
+        revert("[must be implement]");
     }
 }

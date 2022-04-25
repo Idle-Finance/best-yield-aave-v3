@@ -220,6 +220,15 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
         uint256 nextRate = wrapper.nextSupplyRate(amount);
 
         assertApproxEq(nextRate, 1e18, 10 * 1e18); // 1~10
-        assertLe(nextRate, currentRate, "the much supply,the lower rate");
+        assertLe(nextRate, currentRate, "the much supply, the lower rate");
+    }
+
+    function testApr() external runOnForkingNetwork(POLYGON_MAINNET_CHIANID) {
+        uint256 apr = wrapper.getAPR();
+        uint256 actualRate = IPool(provider.getPool())
+            .getReserveData(underlying)
+            .currentLiquidityRate;
+        assertEq(apr, actualRate / 10**7);
+        assertGt(apr, 1e16); // 0.01 % APR
     }
 }
