@@ -84,7 +84,8 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
 
     /**
      * Calculate next supply rate for Aave, given an `_amount` supplied
-     *
+     * eg 4% apr should be 4*1e18.
+     * NOTE: aave v3 express 1%apr as 1e25 in ray instead of 1e27.
      * @return : yearly net rate
      */
     function nextSupplyRate(uint256 _amount)
@@ -93,9 +94,11 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
         override
         returns (uint256)
     {
+        address _underlying = underlying;
+
         DataTypes.ReserveData memory data = IPool(
             provider.getPool()
-        ).getReserveData(underlying); // prettier-ignore
+        ).getReserveData(_underlying); // prettier-ignore
         DataTypes.ReserveConfigurationMap memory config = data.configuration;
         uint256 reserveFactor = config.getReserveFactor();
 
@@ -107,11 +110,11 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
             data.variableDebtTokenAddress
         ).scaledTotalSupply() * data.variableBorrowIndex) / 10**27; // variable borrow index. Expressed in ray
 
-        IReserveInterestRateStrategy rateStrategy = IReserveInterestRateStrategy(
-                data.interestRateStrategyAddress
-            );
+        IReserveInterestRateStrategy irs = IReserveInterestRateStrategy(
+            data.interestRateStrategyAddress
+        );
 
-        (uint256 liquidityRate, , ) = rateStrategy.calculateInterestRates(
+        (uint256 liquidityRate, , ) = irs.calculateInterestRates(
             DataTypes.CalculateInterestRatesParams({
                 unbacked: data.unbacked,
                 liquidityAdded: _amount,
@@ -120,11 +123,14 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
                 totalVariableDebt: totalVariableDebt,
                 averageStableBorrowRate: avgStableRate,
                 reserveFactor: reserveFactor,
-                reserve: underlying,
+                reserve: _underlying,
                 aToken: token
             })
         );
-        return liquidityRate / 10**7; // 100 / 10**9 = 19**7
+
+        // liquidityRate is expressed in ray. in addition, in aave 1%apr is expressed as 1e25 instead of 1e27
+        // liquidityRate is should be divided by 1e9 and multiplied by 100
+        return liquidityRate / 10**7;
     }
 
     /**
@@ -136,6 +142,8 @@ contract IdleAaveV3 is ILendingProtocol, Ownable {
 
     /**
      * @return apr : current yearly net rate
+     * eg 4% apr should be 4*1e18
+     * NOTE: aave v3 express 1%apr as 1e25 in ray instead of 1e27.
      */
     function getAPR() external view override returns (uint256) {
         // data.currentLiquidityRate means current supply rate. Expressed in ray
