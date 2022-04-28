@@ -40,13 +40,24 @@ To run test on forked polygon network, copy `.env.example` to `.env` and set the
 export ALCHEMY_API_KEY=YOUR_API_KEY
 export POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
 export FORK_BLOCK_NUMBER=26900000 # polygon
-
+export VERBOSITY_OPTION=-vvv
 ```
 
 then Type:
 
 ```sh
 make test-fork
+```
+
+### Trace
+
+To show the trace of failed tests use `-vvv` option.
+
+To fetche function signatures given the selector from
+4byte.directory type:
+
+```sh
+cast 4byte <SELECTOR>
 ```
 
 ## Docs

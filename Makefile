@@ -11,7 +11,7 @@ install-deps	:; yarn install --frozen-lockfile
 build         	:; forge build
 xclean        	:; forge clean
 lint          	:; yarn run lint
-test          	:; forge test
+test          	:; forge test ${VERBOSITY_OPTION} 
 test-gasreport 	:; forge test --gas-report
-test-fork       :; forge test --fork-url ${POLYGON_RPC_URL} --fork-block-number ${FORK_BLOCK_NUMBER}
-watch		  	:; forge test --watch src/ 
+test-fork       :; forge test ${VERBOSITY_OPTION} --fork-url ${POLYGON_RPC_URL} --fork-block-number ${FORK_BLOCK_NUMBER}
+watch		  	:; forge test --watch src/

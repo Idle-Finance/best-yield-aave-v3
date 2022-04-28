@@ -19,6 +19,9 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
 
     uint256 internal constant FULL_ALLOCATION = 100000;
 
+    address internal constant WMATIC =
+        0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+
     StdStorage internal stdstore;
 
     /// @notice aave v3 provider
@@ -78,8 +81,8 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
             // create govTokens parameters
             address[] memory govTokens = new address[](1);
             address[] memory govTokensEqualLen = new address[](length + 1);
-            govTokens[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-            govTokensEqualLen[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+            govTokens[0] = WMATIC;
+            govTokensEqualLen[0] = WMATIC;
             govTokensEqualLen[1] = address(0);
             govTokensEqualLen[2] = address(0);
 
@@ -119,6 +122,7 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
         hevm.label(address(underlying), "underlying");
         hevm.label(address(aToken), "aToken");
         hevm.label(address(pool), "pool");
+        hevm.label(address(WMATIC), "wmatic");
 
         // fund
         _writeTokenBalance(address(this), underlying, amount);
@@ -208,7 +212,7 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
         assertRelApproxEq(
             IERC20(aToken).balanceOf(address(idleToken)),
             (assetsInUnderlying * (100000 - maxUnlentPerc)) / 100000,
-            1e12 // 1e18 = 100 %
+            1e12 // 1e18 == 100 %
         );
     }
 
@@ -227,8 +231,7 @@ abstract contract IdleAaveV3TokenIntegrationTest is DSTestPlus {
         uint256 apr = wrapper.getAPR();
         uint256 actualRate = IPool(provider.getPool())
             .getReserveData(underlying)
-            .currentLiquidityRate;
+            .currentLiquidityRate; // Expressed in ray. In aave 1% apr is expressed as 1e25.
         assertEq(apr, actualRate / 10**7);
-        assertGt(apr, 1e16); // 0.01 % APR
     }
 }
